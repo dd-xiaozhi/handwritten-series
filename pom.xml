@@ -12,6 +12,7 @@
         <module>collection</module>
         <module>thread</module>
         <module>spring</module>
+        <module>spring-mvc</module>
     </modules>
 
     <properties>
