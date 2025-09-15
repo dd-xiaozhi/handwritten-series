@@ -43,10 +43,11 @@ public class DispatchServlet extends HttpServlet implements BeanPostProcess {
     @Override
     public void service(HttpServletRequest req, HttpServletResponse resp) {
         try {
-            // 前置拦截
-
             // 获取处理当前请求的 handler
             RequestHandler requestHandler = findRequestHandler(req);
+
+            // 前置拦截
+            doHandlerInterceptor(true, requestHandler, req, resp);
 
             // 执行 handler 的处理方法
             Object returnValue = invokeRequestHandler(requestHandler, req);
@@ -55,6 +56,8 @@ public class DispatchServlet extends HttpServlet implements BeanPostProcess {
             doReturnValue(returnValue, requestHandler, resp);
 
             // 后置拦截
+            doHandlerInterceptor(false, requestHandler, req, resp);
+
         } catch (Exception ex) {
             // 处理异常，这里直接报 500
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -178,6 +181,27 @@ public class DispatchServlet extends HttpServlet implements BeanPostProcess {
     }
 
     private void handlerInterceptor(Object bean) {
+        if (bean instanceof HandlerInterceptor handlerInterceptor) {
+            handlerInterceptorList.add(handlerInterceptor);
+        }
+    }
 
+    private void doHandlerInterceptor(boolean isPreHandle,
+                                      RequestHandler requestHandler,
+                                      HttpServletRequest req,
+                                      HttpServletResponse resp) {
+        handlerInterceptorList.forEach(handler -> {
+            try {
+                if (isPreHandle) {
+                    if (!handler.preHandle(req, resp, requestHandler)) {
+                        throw new RuntimeException("请求被拦截....");
+                    }
+                } else {
+                    handler.postHandle(req, resp, requestHandler);
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
     }
 }
