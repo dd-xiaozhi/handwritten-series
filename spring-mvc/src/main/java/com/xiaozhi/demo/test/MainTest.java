@@ -1,4 +1,4 @@
-package com.xiaozhi.demo;
+package com.xiaozhi.demo.test;
 
 import com.xiaozhi.demo.ioc.ApplicationContext;
 import lombok.SneakyThrows;
@@ -11,6 +11,6 @@ public class MainTest {
 
     @SneakyThrows
     public static void main(String[] args) {
-        ApplicationContext context = new ApplicationContext("com.xiaozhi.demo");
+        new ApplicationContext("com.xiaozhi.demo");
     }
 }

@@ -1,5 +1,6 @@
 package com.xiaozhi.demo.mvc;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaozhi.demo.annotation.Component;
 import com.xiaozhi.demo.annotation.Controller;
 import com.xiaozhi.demo.annotation.RequestMapping;
@@ -9,7 +10,9 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.SneakyThrows;
+import lombok.Synchronized;
 import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Method;
@@ -30,27 +33,30 @@ public class DispatchServlet extends HttpServlet implements BeanPostProcess {
 
     @SneakyThrows
     @Override
-    public void service(ServletRequest req, ServletResponse resp) {
+    public void service(HttpServletRequest req, HttpServletResponse resp) {
         // 前置拦截
 
         // 获取处理当前请求的 handler
-        RequestHandler requestHandler = findRequestHandler((HttpServletRequest) req);
+        RequestHandler requestHandler = findRequestHandler(req);
 
         // 执行 handler 的处理方法
-        Object returnValue = invokeRequestHandler(requestHandler);
+        Object returnValue = invokeRequestHandler(requestHandler, req);
 
         // 响应数据
-        doReturnValue(returnValue, requestHandler);
+        doReturnValue(returnValue, requestHandler, resp);
 
         // 后置拦截
 
     }
 
-    private void doReturnValue(Object returnValue, RequestHandler requestHandler) {
+    @SneakyThrows
+    private void doReturnValue(Object returnValue, RequestHandler requestHandler, HttpServletResponse resp) {
         RequestHandler.ResponseType responseType = requestHandler.getResponseType();
         switch (responseType) {
             case JSON -> {
-
+                resp.setContentType("application/json;chatSet=utf-8");
+                ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.writer().writeValue(resp.getWriter(), returnValue);
             }
             case FILE -> {
 
@@ -61,14 +67,26 @@ public class DispatchServlet extends HttpServlet implements BeanPostProcess {
         }
     }
 
-    private Object invokeRequestHandler(RequestHandler requestHandler) {
+    @SneakyThrows
+    private Object invokeRequestHandler(RequestHandler requestHandler, HttpServletRequest req) {
         Method method = requestHandler.getMethod();
+
+        Object[] args = getMethodParameters(method, req);
+
+        return method.invoke(requestHandler.getControllerBean(), args);
+    }
+
+    // 设置方法参数
+    private Object[] getMethodParameters(Method method, HttpServletRequest req) {
         return null;
     }
 
     private RequestHandler findRequestHandler(HttpServletRequest req) {
-
-        return handlerMap.get(req.getRequestURI());
+        RequestHandler requestHandler = handlerMap.get(req.getRequestURI());
+        if (requestHandler == null) {
+            throw new RuntimeException("找不到这个请求对应的处理器");
+        }
+        return requestHandler;
     }
 
     /**
@@ -85,7 +103,7 @@ public class DispatchServlet extends HttpServlet implements BeanPostProcess {
     private void handlerController(Object bean) {
         Class<?> beanClass = bean.getClass();
         // 判断是非是 Controller 类型的 bean
-        if (!beanClass.isAssignableFrom(Controller.class)) {
+        if (!beanClass.isAnnotationPresent(Controller.class)) {
             return;
         }
 
