@@ -15,7 +15,7 @@ public class TestController {
 
     @RequestMapping("/html")
     public String html() {
-        return "<h1>hello word</h1>";
+        return "forward:index";
     }
 
     @ResponseBody

@@ -1,11 +1,13 @@
 package com.xiaozhi.demo.mvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.reflect.ClassPath;
 import com.xiaozhi.demo.annotation.Component;
 import com.xiaozhi.demo.annotation.Controller;
 import com.xiaozhi.demo.annotation.RequestMapping;
 import com.xiaozhi.demo.annotation.ResponseBody;
 import com.xiaozhi.demo.ioc.BeanPostProcess;
+import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServlet;
@@ -13,9 +15,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.SneakyThrows;
 import lombok.Synchronized;
+import org.apache.commons.lang3.ClassPathUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.InputStream;
+import java.io.PrintWriter;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -31,39 +37,59 @@ public class DispatchServlet extends HttpServlet implements BeanPostProcess {
 
     private List<HandlerInterceptor> handlerInterceptorList = new ArrayList<>();
 
+    private final String FORWARD_TAG = "forward:";
+
     @SneakyThrows
     @Override
     public void service(HttpServletRequest req, HttpServletResponse resp) {
-        // 前置拦截
+        try {
+            // 前置拦截
 
-        // 获取处理当前请求的 handler
-        RequestHandler requestHandler = findRequestHandler(req);
+            // 获取处理当前请求的 handler
+            RequestHandler requestHandler = findRequestHandler(req);
 
-        // 执行 handler 的处理方法
-        Object returnValue = invokeRequestHandler(requestHandler, req);
+            // 执行 handler 的处理方法
+            Object returnValue = invokeRequestHandler(requestHandler, req);
 
-        // 响应数据
-        doReturnValue(returnValue, requestHandler, resp);
+            // 响应数据
+            doReturnValue(returnValue, requestHandler, resp);
 
-        // 后置拦截
+            // 后置拦截
+        } catch (Exception ex) {
+            // 处理异常，这里直接报 500
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
 
     }
 
     @SneakyThrows
     private void doReturnValue(Object returnValue, RequestHandler requestHandler, HttpServletResponse resp) {
+        if (returnValue == null) {
+            return;
+        }
+
         RequestHandler.ResponseType responseType = requestHandler.getResponseType();
+        resp.setContentType("application/json;chatSet=utf-8");
+        ServletOutputStream outputStream = resp.getOutputStream();
         switch (responseType) {
             case JSON -> {
-                resp.setContentType("application/json;chatSet=utf-8");
                 ObjectMapper objectMapper = new ObjectMapper();
-                objectMapper.writer().writeValue(resp.getWriter(), returnValue);
+                objectMapper.writer().writeValue(outputStream, returnValue);
             }
             case FILE -> {
 
             }
             case HTML -> {
-
+                if (returnValue instanceof String str && str.startsWith(FORWARD_TAG)) {
+                    String htmlFileName = str.substring(FORWARD_TAG.length());
+                    resp.setContentType("text/html");
+                    resp.setCharacterEncoding("utf-8");
+                    InputStream htmlResource = this.getClass().getClassLoader()
+                            .getResourceAsStream(htmlFileName + ".html");
+                    outputStream.write(htmlResource.readAllBytes());
+                }
             }
+            default -> outputStream.write(returnValue.toString().getBytes(StandardCharsets.UTF_8));
         }
     }
 
@@ -118,9 +144,7 @@ public class DispatchServlet extends HttpServlet implements BeanPostProcess {
                     }
 
                     RequestHandler requestHandler = new RequestHandler().setMethod(m).setControllerBean(bean);
-                    if (m.isAnnotationPresent(ResponseBody.class)) {
-                        requestHandler.setResponseType(RequestHandler.ResponseType.JSON);
-                    }
+                    requestHandler.setResponseType(getResponseType(m));
 
                     // 创建 RequestHandler
                     this.handlerMap.put(handlerPath, requestHandler);
@@ -142,6 +166,15 @@ public class DispatchServlet extends HttpServlet implements BeanPostProcess {
 
         // TODO 这里还需要处理路径，这里就不处理了
         return path.concat(methodReqMp.value());
+    }
+
+    private RequestHandler.ResponseType getResponseType(Method method) {
+        if (method.isAnnotationPresent(ResponseBody.class)) {
+            return RequestHandler.ResponseType.JSON;
+        } else if (method.getReturnType().isAssignableFrom(String.class)) {
+            return RequestHandler.ResponseType.HTML;
+        }
+        return null;
     }
 
     private void handlerInterceptor(Object bean) {
