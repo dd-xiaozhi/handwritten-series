@@ -5,7 +5,6 @@ import lombok.Data;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.locks.LockSupport;
 
@@ -17,7 +16,11 @@ public class Scheduled {
 
     private final Trigger trigger = new Trigger();
     private final Map<String, Job> jobMap = new ConcurrentHashMap<>();
-    private final ExecutorService executorService = Executors.newFixedThreadPool(4);
+    private final ExecutorService executorService;
+
+    public Scheduled(ExecutorService executorService) {
+        this.executorService = executorService;
+    }
 
     public void executor(String jobName, Runnable task, long delay) {
         if (jobMap.containsKey(jobName)) {
@@ -33,12 +36,8 @@ public class Scheduled {
     public void stop(String jobName) {
         // 从任务容器中移除
         Job job = jobMap.remove(jobName);
-        Thread currentThread = job.getCurrentThread();
         // 获取当前执行任务的线程
-        if (currentThread != null && Thread.State.RUNNABLE.equals(currentThread.getState())) {
-            System.out.println("任务" + jobName + "已暂停");
-            currentThread.interrupt();
-        }
+        job.stop();
     }
 
 
@@ -90,7 +89,6 @@ public class Scheduled {
 
         private String jobName;
         private long delay;
-        // 当前执行任务的线程
         private Thread currentThread;
         private Runnable task;
         private long startTime;
@@ -104,13 +102,25 @@ public class Scheduled {
 
         @Override
         public int compareTo(Job o) {
-            return (int) (this.startTime - o.startTime);
+            return Long.compare(this.startTime, o.getStartTime());
+        }
+
+        /**
+         * 暂停任务（这里我们直接粗暴将当前线程中断）
+         */
+        public void stop() {
+            if (this.currentThread != null
+                    && Thread.State.RUNNABLE.equals(this.currentThread.getState())) {
+                System.out.println("任务 [%s] 已被暂停...".formatted(this.jobName));
+                this.currentThread.interrupt();
+            }
         }
 
         @Override
         public void run() {
             this.currentThread = Thread.currentThread();
             task.run();
+            this.currentThread = null;
         }
     }
 }
