@@ -4,6 +4,7 @@ import com.xiaozhi.demo.annotation.Component;
 import com.xiaozhi.demo.annotation.Controller;
 import com.xiaozhi.demo.annotation.RequestMapping;
 import com.xiaozhi.demo.annotation.ResponseBody;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * @author DD
@@ -14,7 +15,8 @@ import com.xiaozhi.demo.annotation.ResponseBody;
 public class TestController {
 
     @RequestMapping("/html")
-    public String html() {
+    public String html(HttpServletRequest request) {
+        request.setAttribute("content", "test");
         return "forward:index";
     }
 

@@ -21,8 +21,11 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 调度器
@@ -50,10 +53,10 @@ public class DispatchServlet extends HttpServlet implements BeanPostProcess {
             doHandlerInterceptor(true, requestHandler, req, resp);
 
             // 执行 handler 的处理方法
-            Object returnValue = invokeRequestHandler(requestHandler, req);
+            Object returnValue = invokeRequestHandler(requestHandler, req, resp);
 
             // 响应数据
-            doReturnValue(returnValue, requestHandler, resp);
+            doReturnValue(returnValue, requestHandler, req, resp);
 
             // 后置拦截
             doHandlerInterceptor(false, requestHandler, req, resp);
@@ -66,16 +69,19 @@ public class DispatchServlet extends HttpServlet implements BeanPostProcess {
     }
 
     @SneakyThrows
-    private void doReturnValue(Object returnValue, RequestHandler requestHandler, HttpServletResponse resp) {
+    private void doReturnValue(Object returnValue,
+                               RequestHandler requestHandler,
+                               HttpServletRequest req,
+                               HttpServletResponse resp) {
         if (returnValue == null) {
             return;
         }
 
         RequestHandler.ResponseType responseType = requestHandler.getResponseType();
-        resp.setContentType("application/json;chatSet=utf-8");
         ServletOutputStream outputStream = resp.getOutputStream();
         switch (responseType) {
             case JSON -> {
+                resp.setContentType("application/json;chatSet=utf-8");
                 ObjectMapper objectMapper = new ObjectMapper();
                 objectMapper.writer().writeValue(outputStream, returnValue);
             }
@@ -86,10 +92,9 @@ public class DispatchServlet extends HttpServlet implements BeanPostProcess {
                 if (returnValue instanceof String str && str.startsWith(FORWARD_TAG)) {
                     String htmlFileName = str.substring(FORWARD_TAG.length());
                     resp.setContentType("text/html");
-                    resp.setCharacterEncoding("utf-8");
-                    InputStream htmlResource = this.getClass().getClassLoader()
-                            .getResourceAsStream(htmlFileName + ".html");
-                    outputStream.write(htmlResource.readAllBytes());
+                    resp.setCharacterEncoding("utf-8");;
+                    String htmlStr = RenderingTemplate(htmlFileName, req);
+                    outputStream.write(htmlStr.getBytes(StandardCharsets.UTF_8));
                 }
             }
             default -> outputStream.write(returnValue.toString().getBytes(StandardCharsets.UTF_8));
@@ -97,16 +102,46 @@ public class DispatchServlet extends HttpServlet implements BeanPostProcess {
     }
 
     @SneakyThrows
-    private Object invokeRequestHandler(RequestHandler requestHandler, HttpServletRequest req) {
+    private String RenderingTemplate(String htmlFileName, HttpServletRequest req) {
+        InputStream htmlResource = this.getClass().getClassLoader()
+                            .getResourceAsStream(htmlFileName + ".html");
+        String htmlStr = new String(htmlResource.readAllBytes());
+        // 提取出 {{ 变量 }}
+        String regex = "\\{\\{(.*?)\\}\\}";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(htmlStr);
+        while (matcher.find()) {
+            String variableName = matcher.group(1);
+            // 这里直接从请求域中获取
+            String variableValue = req.getAttribute(variableName).toString();
+            htmlStr = htmlStr.replace("{{" + variableName + "}}", variableValue);
+        }
+        return htmlStr;
+    }
+
+    @SneakyThrows
+    private Object invokeRequestHandler(RequestHandler requestHandler,
+                                        HttpServletRequest req,
+                                        HttpServletResponse resp) {
         Method method = requestHandler.getMethod();
 
-        Object[] args = getMethodParameters(method, req);
+        Object[] args = getMethodParameters(method, req, resp);
 
         return method.invoke(requestHandler.getControllerBean(), args);
     }
 
     // 设置方法参数
-    private Object[] getMethodParameters(Method method, HttpServletRequest req) {
+
+    private Object[] getMethodParameters(Method method,
+                                         HttpServletRequest req,
+                                         HttpServletResponse resp) {
+        Parameter[] parameters = method.getParameters();
+        for (Parameter parameter : parameters) {
+            // 这里会有很多的 converter 处理器处理请求参数（这里简单处理）
+            if (parameter.getType().equals(HttpServletRequest.class)) {
+                return new Object[]{req};
+            }
+        }
         return null;
     }
 
