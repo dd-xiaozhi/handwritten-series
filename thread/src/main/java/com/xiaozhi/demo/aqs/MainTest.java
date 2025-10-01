@@ -11,19 +11,46 @@ import java.util.List;
  */
 public class MainTest {
 
+//    public static void main(String[] args) {
+//        int[] count = new int[]{10000};
+//        List<Thread> threads = new ArrayList<>();
+//        MyLock lock = new MyLock();
+//        for (int i = 0; i < 100; i++) {
+//            threads.add(new Thread(() -> {
+//                try {
+//                    lock.lock();
+//                    for (int j = 0; j < 100; j++) {
+//                        count[0]--;
+//                    }
+//                } finally {
+//                    lock.unlock();
+//                }
+//            }));
+//        }
+//        threads.forEach(Thread::start);
+//        threads.forEach(thread -> {
+//            try {
+//                thread.join();
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//        });
+//
+//        System.out.println(count[0]);
+//    }
+
     public static void main(String[] args) {
-        int[] count = new int[]{10000};
+        int[] count = new int[]{0};
         List<Thread> threads = new ArrayList<>();
         MyLock lock = new MyLock();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 50; i++) {
             threads.add(new Thread(() -> {
-                try {
-                    lock.lock();
-                    for (int j = 0; j < 100; j++) {
-                        count[0]--;
-                    }
-                } finally {
-                    lock.unlock();
+                for (int j = 0; j < 5; j++) {
+                    lock.reentrantLock();
+                    count[0]++;
+                }
+                for (int j = 0; j < 5; j++) {
+                    lock.reentrantUnlock();
                 }
             }));
         }
@@ -36,6 +63,6 @@ public class MainTest {
             }
         });
 
-        System.out.println(count[0]);
+        System.out.println("count: " + count[0]);
     }
 }
