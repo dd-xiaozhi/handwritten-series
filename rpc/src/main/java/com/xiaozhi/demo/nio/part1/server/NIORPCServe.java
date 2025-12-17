@@ -1,0 +1,55 @@
+package com.xiaozhi.demo.nio.part1.server;
+
+import com.xiaozhi.demo.nio.part1.handler.NIOServerChannelInitializer;
+import com.xiaozhi.demo.nio.part1.provider.ServiceProvider;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+
+/**
+ *
+ * @author DD
+ */
+public class NIORPCServe implements RPCServer {
+
+    public final ServerBootstrap serverBootstrap;
+    public final EventLoopGroup bossGroup;
+    public final EventLoopGroup workerGroup;
+    private final ServiceProvider serviceProvider;
+
+    public NIORPCServe (ServiceProvider serviceProvider) {
+        this.serverBootstrap = new ServerBootstrap();
+        this.bossGroup = new NioEventLoopGroup();
+        this.workerGroup = new NioEventLoopGroup();
+        this.serviceProvider = serviceProvider;
+        initServerBootstrap();
+    }
+
+    private void initServerBootstrap() {
+        serverBootstrap.group(bossGroup, workerGroup)
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new NIOServerChannelInitializer(serviceProvider));
+    }
+
+    @Override
+    public void start(int port) {
+        try {
+            // 同步阻塞
+            ChannelFuture channelFuture = serverBootstrap.bind(port).sync();
+            // 死循环监听请求
+            channelFuture.channel().closeFuture().sync();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+        }
+    }
+
+    @Override
+    public void stop() {
+
+    }
+}
