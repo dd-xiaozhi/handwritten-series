@@ -28,5 +28,6 @@ public class NIORPCServerHandler extends SimpleChannelInboundHandler<RpcReq> {
                 rpcReq.getParameterTypes());
         Object returnResult = method.invoke(service, rpcReq.getParameters());
         ctx.channel().writeAndFlush(RpcResp.success(returnResult));
+        ctx.close();
     }
 }

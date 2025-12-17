@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ServiceProvider {
 
-    public static final Map<String, Object> SERVICE_BEAN_MAP = new ConcurrentHashMap<>();
+    private static final Map<String, Object> SERVICE_BEAN_MAP = new ConcurrentHashMap<>();
 
     public void addService(Object serviceBean) {
         Class<?>[] interfaces = serviceBean.getClass().getInterfaces();

@@ -19,7 +19,7 @@ public class NIORPCServe implements RPCServer {
     public final EventLoopGroup workerGroup;
     private final ServiceProvider serviceProvider;
 
-    public NIORPCServe (ServiceProvider serviceProvider) {
+    public NIORPCServe(ServiceProvider serviceProvider) {
         this.serverBootstrap = new ServerBootstrap();
         this.bossGroup = new NioEventLoopGroup();
         this.workerGroup = new NioEventLoopGroup();
@@ -28,7 +28,8 @@ public class NIORPCServe implements RPCServer {
     }
 
     private void initServerBootstrap() {
-        serverBootstrap.group(bossGroup, workerGroup)
+        serverBootstrap
+                .group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(new NIOServerChannelInitializer(serviceProvider));
     }
@@ -36,9 +37,9 @@ public class NIORPCServe implements RPCServer {
     @Override
     public void start(int port) {
         try {
-            // 同步阻塞
+            // 启动并阻塞等待处理请求
             ChannelFuture channelFuture = serverBootstrap.bind(port).sync();
-            // 死循环监听请求
+            // 阻塞等待服务器管理
             channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
