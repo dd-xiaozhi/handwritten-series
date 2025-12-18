@@ -2,10 +2,10 @@
 syntax = "proto3";
 
 // 当前 .proto文件所在的目录（类似于Java文件的包路径）
-package com.xiaozhi.demo.netty.part2.serialization;
+package com.xiaozhi.demo.serialization.protobuf;
 
 // .proto文件生成 .java文件时的目录
-option java_package = "com.xiaozhi.demo.netty.part2.serialization";
+option java_package = "com.xiaozhi.demo.serialization.protobuf";
 // 生成的 java 文件名
 option java_outer_classname = "TestProto";
 // 是否生成 equest 和 hashCode 方法
