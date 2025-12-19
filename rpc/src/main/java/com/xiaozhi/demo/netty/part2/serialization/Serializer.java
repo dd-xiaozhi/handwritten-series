@@ -24,4 +24,11 @@ public interface Serializer {
      * @return 反序列化对象
      */
     <T> T bytesToObject(byte[] bytes, Class<T> clazz) throws Exception;
+
+    /**
+     * 序列化类型
+     *
+     * @return 序列化类型
+     */
+    int type();
 }

@@ -18,4 +18,9 @@ public class JsonSeriallizer implements Serializer {
     public <T> T bytesToObject(byte[] bytes, Class<T> clazz) {
         return JSON.parseObject(bytes, clazz);
     }
+
+    @Override
+    public int type() {
+        return SerializeTypeEnum.JSON.getCode();
+    }
 }

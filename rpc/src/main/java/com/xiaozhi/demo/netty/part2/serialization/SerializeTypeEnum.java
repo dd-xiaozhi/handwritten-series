@@ -11,13 +11,12 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum SerializeTypeEnum {
 
-    JAVA_OBJECT(1, "java object", new ObjectSeriallizer()),
-    JSON(2, "json", new JsonSeriallizer()),
-    PROTOBUF(3, "protobuf", new ProtobufSeriallizer());
+    JAVA_OBJECT(1, "java object"),
+    JSON(2, "json"),
+    PROTOBUF(3, "protobuf");
 
     private final int code;
     private final String name;
-    private final Serializer serializer;
 
     public static SerializeTypeEnum getByCode(int code) {
         for (SerializeTypeEnum value : values()) {

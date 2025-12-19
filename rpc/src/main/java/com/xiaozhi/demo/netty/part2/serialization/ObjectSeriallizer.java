@@ -29,4 +29,9 @@ public class ObjectSeriallizer implements Serializer {
             return (T) ois.readObject();
         }
     }
+
+    @Override
+    public int type() {
+        return SerializeTypeEnum.JAVA_OBJECT.getCode();
+    }
 }

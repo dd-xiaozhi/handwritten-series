@@ -15,4 +15,9 @@ public class ProtobufSeriallizer implements Serializer {
     public <T> T bytesToObject(byte[] bytes, Class<T> clazz) {
         return null;
     }
+
+    @Override
+    public int type() {
+        return SerializeTypeEnum.PROTOBUF.getCode();
+    }
 }
