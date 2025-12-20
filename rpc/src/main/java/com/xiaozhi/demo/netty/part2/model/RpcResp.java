@@ -1,7 +1,7 @@
 package com.xiaozhi.demo.netty.part2.model;
 
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 
@@ -10,18 +10,29 @@ import java.io.Serializable;
  * @author DD
  */
 @Data
-@Builder
-public class RpcResp  implements Serializable {
+@EqualsAndHashCode(callSuper = true)
+public class RpcResp  extends RpcMdeol implements Serializable {
 
-    private String code;
-    private String message;
+    private String code = "00000";
+    private String message = "ok";
+    private Class<?> dataType;
     private Object data;
 
     public static RpcResp success(Object data) {
-        return RpcResp.builder().code("00000").message("ok").data(data).build();
+        return create(data);
     }
 
     public static RpcResp fail(String message) {
-        return RpcResp.builder().code("99999").message(message).build();
+        RpcResp rpcResp = new RpcResp();
+        rpcResp.setCode("99999");
+        rpcResp.setMessage(message);
+        return rpcResp;
+    }
+    
+    public static RpcResp create(Object data) {
+        RpcResp rpcResp = new RpcResp();
+        rpcResp.setData(data);
+        rpcResp.setDataType(data.getClass());
+        return rpcResp;
     }
 }

@@ -3,6 +3,7 @@ package com.xiaozhi.demo.netty.part2.proxy;
 import com.xiaozhi.demo.netty.part2.client.RPCClient;
 import com.xiaozhi.demo.netty.part2.model.RpcReq;
 import com.xiaozhi.demo.netty.part2.model.RpcResp;
+import com.xiaozhi.demo.netty.part2.serialization.SerializeType;
 import lombok.AllArgsConstructor;
 
 import java.lang.reflect.InvocationHandler;
@@ -18,16 +19,17 @@ import java.lang.reflect.Proxy;
 public class ClientProxy implements InvocationHandler {
 
     private RPCClient rpcClient;
+    private SerializeType serializeType;
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) {
-        RpcReq rpcReq = RpcReq.builder()
-                .interfaceName(method.getDeclaringClass().getName())
-                .methodName(method.getName())
-                .parameters(args)
-                .parameterTypes(method.getParameterTypes())
-                .build();
-
+        RpcReq rpcReq = new RpcReq();
+        rpcReq.setInterfaceName(method.getDeclaringClass().getName());
+        rpcReq.setMethodName(method.getName());
+        rpcReq.setParameterTypes(method.getParameterTypes());
+        rpcReq.setParameters(args);
+        rpcReq.setSerializerType(serializeType);
+        
         RpcResp rpcResp = rpcClient.send(rpcReq);
         if (!rpcResp.getCode().equals("00000")) {
             throw new RuntimeException(rpcResp.getMessage());

@@ -1,0 +1,23 @@
+// 指定使用 proto 版本
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+// 当前 .proto文件所在的目录（类似于Java文件的包路径）
+package com.xiaozhi.demo.netty.part2.serialization.protobuf;
+
+// .proto文件生成 .java文件时的目录
+option java_package = "com.xiaozhi.demo.netty.part2.serialization.protobuf";
+// 生成的 java 文件名
+option java_outer_classname = "RpcResponse";
+// 是否生成 equest 和 hashCode 方法
+option java_generate_equals_and_hash = true;
+// 是否自动生成 java 代码，划分成多个文件
+option java_multiple_files = false;
+
+// proto 对象定义
+message RpcResponseProto {
+    string code = 1;
+    string message = 2;
+    google.protobuf.Any data = 3;
+}

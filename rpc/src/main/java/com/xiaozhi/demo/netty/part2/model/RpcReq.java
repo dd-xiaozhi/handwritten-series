@@ -1,7 +1,7 @@
 package com.xiaozhi.demo.netty.part2.model;
 
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 
@@ -10,8 +10,8 @@ import java.io.Serializable;
  * @author DD
  */
 @Data
-@Builder
-public class RpcReq implements Serializable {
+@EqualsAndHashCode(callSuper = true)
+public class RpcReq extends RpcMdeol implements Serializable {
 
     /**
      * 调用接口名

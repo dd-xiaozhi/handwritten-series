@@ -82,7 +82,7 @@ public class BIORPCServer implements RPCServer {
                 Object returnResult = method.invoke(service, rpcReq.getParameters());
 
                 // 写入User对象给客户端
-                oos.writeObject(RpcResp.builder().code("00000").message("ok").data(returnResult).build());
+                oos.writeObject(RpcResp.success(returnResult));
                 oos.flush();
             } catch (Exception e) {
                 throw new RuntimeException(e);

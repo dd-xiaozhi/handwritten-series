@@ -32,6 +32,6 @@ public class ObjectSeriallizer implements Serializer {
 
     @Override
     public int type() {
-        return SerializeTypeEnum.JAVA_OBJECT.getCode();
+        return SerializeType.JAVA_OBJECT.getCode();
     }
 }

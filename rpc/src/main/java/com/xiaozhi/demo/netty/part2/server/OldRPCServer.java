@@ -39,7 +39,7 @@ public class OldRPCServer {
                         Object obj = method.invoke(userService, rpcReq.getParameters());
 
                         // 写入User对象给客户端
-                        oos.writeObject(RpcResp.builder().code("00000").message("ok").data(obj).build());
+                        oos.writeObject(RpcResp.success(obj));
                         oos.flush();
                     } catch (Exception e) {
                         e.printStackTrace();
