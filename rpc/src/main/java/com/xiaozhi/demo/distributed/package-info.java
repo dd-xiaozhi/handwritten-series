@@ -1,5 +1,5 @@
 /**
- * 接入 zookeeper 实现分布式 rpc
+ * 基于 zookeeper 实现分布式 rpc
  *
  *
  * @author DD

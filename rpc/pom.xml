@@ -35,7 +35,7 @@
             <artifactId>protobuf-java</artifactId>
             <version>4.33.2</version>
         </dependency>
-        
+
         <dependency>
             <groupId>io.protostuff</groupId>
             <artifactId>protostuff-core</artifactId>
@@ -51,6 +51,12 @@
             <groupId>com.caucho</groupId>
             <artifactId>hessian</artifactId>
             <version>4.0.66</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-recipes</artifactId>
+            <version>5.9.0</version>
         </dependency>
     </dependencies>
 
